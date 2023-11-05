@@ -151,6 +151,6 @@ int main(){
             sscanf(input, "%d", &to_write);
             tape[ptr] = to_write % 256;
         }
-        usleep(5000);
+        usleep(500);
     }
 }
