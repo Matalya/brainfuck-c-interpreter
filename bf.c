@@ -99,7 +99,7 @@ int main(){
         printf("Unmatched opening bracket at %d", getStackTop(activeBrackets));
     }
 
-    int charsPrinted = 1;
+    int charsPrinted = 0;
     int skip = 0;
     int upperbracketskip = 0;
     while (rdr != CODE_LEN) {
