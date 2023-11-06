@@ -12,7 +12,7 @@ enum {TAPE_LEN = 30000};
 u8 tape[TAPE_LEN];
 int ptr = 0;
 const char* CODE =
-"+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.";
+"[[-]+]\0";
 int rdr = 0;
 
 typedef struct {
@@ -53,9 +53,6 @@ int is_empty_stack(Stack* stack) {
 }
 
 int getStackTop(Stack* stack) {
-    if (!stack->size) {
-        printf("Could not get item\n");
-    }
     return stack->array[stack->size - 1];
 }
 
@@ -64,12 +61,28 @@ int getStackBottom(Stack* stack) {
 }
 
 void printFirstNCells(int n, int columns) {
-    printf("%lc[1E", ESC);
+    //printf("%lc[1E", ESC);
     for (int i = 0; i < n; i++) {
         printf("%d ", tape[i]);
     }
-    printf("columns: %d", columns);
-    printf("%lc[1F%lc[%dC", ESC, ESC, columns);
+    printf("\n");
+    //printf("%lc[1F%lc[%dC", ESC, ESC, columns);
+}
+
+void skip(Stack* stack) {
+    int skipBreakpoint = stack->size - 1;
+    printf("Stack is %ld/%d; rdr=%d on %c\n", stack->size, skipBreakpoint, rdr, CODE[rdr]);
+    while (stack->size > skipBreakpoint) {
+        rdr++;
+        if (CODE[rdr] == '[') {
+            pushItem(stack, rdr);
+        } else if (CODE[rdr] == ']') {
+            popItem(stack);
+        }
+        printf("Stack is %ld/%d; rdr=%d on %c\n", stack->size, skipBreakpoint, rdr, CODE[rdr]);
+        fflush(stdout);
+    }
+    rdr++;
 }
 
 int main(){
@@ -101,11 +114,10 @@ int main(){
     }
 
     int charsPrinted = 0;
-    int skip = 0;
     int upperbracketskip = 0;
     while (rdr != CODE_LEN) {
         printFirstNCells(30, charsPrinted);
-        printf("\r");
+        //printf("\r");
         fflush(stdout);
         char current = CODE[rdr];
         char input[5];
@@ -115,18 +127,13 @@ int main(){
         if (current == '[') {
             pushItem(activeBrackets, rdr);
             if (tape[ptr] == 0) {
-                skip = 1;
-                upperbracketskip = rdr;
+                skip(activeBrackets);
             }
         } else if (current == ']') {
             if (tape[ptr] != 0) {
                 rdr = getStackTop(activeBrackets);
-            } else {
-                if (getStackTop(activeBrackets) == upperbracketskip) {
-                    skip = 0;
-                }
-                popItem(activeBrackets);
             }
+                popItem(activeBrackets);
         } else if (!is_empty_stack(activeBrackets) && skip) {
             continue;        
         } else if (current == '+') {
@@ -153,7 +160,6 @@ int main(){
             }
         } else if (current == '.') {
             printf("%c", tape[ptr]);
-            charsPrinted++;
             //printf("Chars printed: %d", charsPrinted);
             fflush(stdout);
         } else if (current == ',') {
@@ -161,6 +167,7 @@ int main(){
             sscanf(input, "%d", &to_write);
             tape[ptr] = to_write % 256;
         }
-        usleep(5000);
+        usleep(5000000);
     }
+    printFirstNCells(30, charsPrinted);
 }
