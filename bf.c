@@ -4,15 +4,15 @@
 #include <string.h>
 #include <unistd.h>
 #include <wchar.h>
-typedef int8_t i8;
+typedef uint8_t u8;
 
 const wchar_t ESC = 0x001b;
 
 enum {TAPE_LEN = 30000};
-i8 tape[TAPE_LEN];
+u8 tape[TAPE_LEN];
 int ptr = 0;
 const char* CODE =
-    "+++++++++++>+>>>>++++++++++++++++++++++++++++++++++++++++++++>++++++++++++++++++++++++++++++++<<<<<<[>[>>>>>>+>+<<<<<<<-]>>>>>>>[<<<<<<<+>>>>>>>-]<[>++++++++++[-<-[>>+>+<<<-]>>>[<<<+>>>-]+<[>[-]<[-]]>[<<[>>>+<<<-]>>[-]]<<]>>>[>>+>+<<<-]>>>[<<<+>>>-]+<[>[-]<[-]]>[<<+>>[-]]<<<<<<<]>>>>>[++++++++++++++++++++++++++++++++++++++++++++++++.[-]]++++++++++<[->-<]>++++++++++++++++++++++++++++++++++++++++++++++++.[-]<<<<<<<<<<<<[>>>+>+<<<<-]>>>>[<<<<+>>>>-]<-[>>.>.<<<[-]]<<[>>+>+<<<-]>>>[<<<+>>>-]<<[<+>-]>[<+>-]<<<-]\0";
+"+[-->-[>>+>-----<<]<--<---]>-.>>>+.>>..+++[.>]<<<<.+++.------.<<-.>>>>+.";
 int rdr = 0;
 
 typedef struct {
@@ -64,10 +64,11 @@ int getStackBottom(Stack* stack) {
 }
 
 void printFirstNCells(int n, int columns) {
-    printf("%lc[1B", ESC);
+    printf("%lc[1E", ESC);
     for (int i = 0; i < n; i++) {
         printf("%d ", tape[i]);
     }
+    printf("columns: %d", columns);
     printf("%lc[1F%lc[%dC", ESC, ESC, columns);
 }
 
@@ -129,9 +130,17 @@ int main(){
         } else if (!is_empty_stack(activeBrackets) && skip) {
             continue;        
         } else if (current == '+') {
+            if (tape[ptr] < 255) {
             tape[ptr]++;
+            } else {
+                tape[ptr] = 0;
+            }
         } else if (current == '-') {
+            if (tape[ptr] > 0) {
             tape[ptr]--;
+            } else {
+                tape[ptr] = 255;
+            }
         } else if (current == '>') {
             ptr++;
             if (ptr >= TAPE_LEN) {
@@ -145,6 +154,7 @@ int main(){
         } else if (current == '.') {
             printf("%c", tape[ptr]);
             charsPrinted++;
+            //printf("Chars printed: %d", charsPrinted);
             fflush(stdout);
         } else if (current == ',') {
             fgets(input, sizeof(input), stdin);
